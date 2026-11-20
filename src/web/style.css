@@ -18,6 +18,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--sky); 
 .hud-tl { position: absolute; top: 16px; left: 16px; display: flex; gap: 6px; }
 .hud-tc { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 30px; font-weight: 700; letter-spacing: 1px; background: var(--panel); padding: 4px 16px; border-radius: 10px; color: var(--text); }
 .hud-tc.danger { color: var(--danger); animation: blink 0.8s steps(2) infinite; }
+body.cb { --danger: #ffffff; --rim: #00b3ff; }
+#lamps.short { color: var(--danger); }
+.cap { margin-left: 6px; align-self: center; font-weight: 700; color: var(--core); }
 @keyframes blink { 50% { opacity: 0.35; } }
 .hud-tr { position: absolute; top: 14px; right: 16px; text-align: right; background: var(--panel); padding: 6px 14px; border-radius: 10px; }
 #lamps { font-size: 16px; }

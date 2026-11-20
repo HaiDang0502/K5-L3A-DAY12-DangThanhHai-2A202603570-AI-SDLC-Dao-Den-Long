@@ -10,7 +10,7 @@ import { Sfx } from "./sfx.js";
 const C = {
   sky: 0x0e1430, fog: 0x1b2350, grass: 0x2f5d50, sand: 0xc9b48a, wood: 0x6b4a2f, sea: 0x12384a,
   lit: 0xffb347, core: 0xffe9b0, off: 0x5b5f6e, mote: 0xfff6c2, moteGlow: 0xffe58a,
-  shade: 0x120a1a, rim: 0x7a3cff, stunned: 0x3a3450, shirt: 0xe8e2d0, red: 0xc8102e, gold: 0xf2c14e, drifter: 0x8fa3b8,
+  shade: 0x120a1a, rim: 0x7a3cff, rimCB: 0x00b3ff, stunned: 0x3a3450, shirt: 0xe8e2d0, red: 0xc8102e, gold: 0xf2c14e, drifter: 0x8fa3b8,
 };
 const STORY = {
   1: "Ông Đăng: “Sương đen đã nuốt Đảo Bến. Con hãy gom đom đóm, thắp lại năm chiếc đèn trước khi trời sáng.”",
@@ -33,11 +33,13 @@ moon.position.set(-30, 60, -20);
 scene.add(ambient, moon);
 
 // ---------- settings (persisted) ----------
-const settings = { volume: 0.7, sens: 1 };
+const settings = { volume: 0.7, sens: 1, cb: false }; // cb = "Bảng màu dễ phân biệt"
 try { Object.assign(settings, JSON.parse(localStorage.getItem("ddl-settings") || "{}")); } catch {}
 const saveSettings = () => { try { localStorage.setItem("ddl-settings", JSON.stringify(settings)); } catch {} };
 const sfx = new Sfx();
 sfx.setVolume(settings.volume);
+const applyCB = () => document.body.classList.toggle("cb", !!settings.cb);
+applyCB();
 
 // ---------- shared materials / geometry ----------
 const M = {
@@ -182,6 +184,15 @@ function buildLantern(L) {
   const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.62, 14, 10), paper);
   lamp.scale.set(1, 1.25, 1);
   lamp.position.set(1.4, 3.8, 0);
+  const tear = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.05), new THREE.MeshBasicMaterial({ color: 0x1a1a22 }));
+  tear.position.set(1.4 + 0.25, 3.8, 0.58);
+  tear.rotation.z = 0.5;
+  const fuelBg = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.18), new THREE.MeshBasicMaterial({ color: 0x222233, side: THREE.DoubleSide }));
+  const fuelFg = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.18), new THREE.MeshBasicMaterial({ color: C.lit, side: THREE.DoubleSide }));
+  const fuelBar = new THREE.Group();
+  fuelFg.position.z = 0.01;
+  fuelBar.add(fuelBg, fuelFg);
+  fuelBar.position.set(1.4, 5.3, 0);
   const coreM = new THREE.MeshBasicMaterial({ color: C.core, transparent: true, opacity: 0 });
   const core = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), coreM);
   core.position.copy(lamp.position);
@@ -193,10 +204,10 @@ function buildLantern(L) {
   const safe = new THREE.Mesh(new THREE.RingGeometry(T.safe_radius - 0.12, T.safe_radius, 56), new THREE.MeshBasicMaterial({ color: C.lit, transparent: true, opacity: 0 }));
   safe.rotation.x = -Math.PI / 2;
   safe.position.y = 0.03;
-  g.add(post, arm, lamp, core, light, ring, safe);
+  g.add(post, arm, lamp, core, light, ring, safe, tear, fuelBar);
   g.position.set(L.x, L.y, L.z);
   world.add(g);
-  return { g, paper, coreM, light, ring, safe, shown: -1 };
+  return { g, paper, coreM, light, ring, safe, shown: -1, lamp, tear, fuelBar, fuelFg };
 }
 
 // ---------- Mây ----------
@@ -331,7 +342,7 @@ function showCard(html) { $("card").innerHTML = html; $("overlay").classList.rem
 function hideOverlay() { $("overlay").classList.add("hidden"); }
 const CONTROLS = `<table class="keys">
   <tr><td>W A S D / mũi tên</td><td>Di chuyển theo camera</td></tr>
-  <tr><td>Kéo chuột / Z C</td><td>Xoay camera</td></tr>
+  <tr><td>Di chuột / Z C</td><td>Xoay camera (bấm vào màn chơi để khóa chuột)</td></tr>
   <tr><td>Cuộn chuột</td><td>Camera xa / gần</td></tr>
   <tr><td>Space</td><td>Nhảy</td></tr><tr><td>Shift</td><td>Lướt</td></tr>
   <tr><td>E</td><td>Nạp ánh sáng vào đèn</td></tr>
@@ -349,7 +360,7 @@ function intro(n) {
   introNight = n;
   $("hud").classList.add("hidden");
   const N = NIGHTS[n];
-  showCard(`<h2>Đêm ${n} – ${N.name}</h2><p class="sub">${N.lanterns.length} Đèn Lồng Lớn · ${N.duration_s} giây</p>
+  showCard(`<h2>Đêm ${n} – ${N.name}</h2><p class="sub">${N.lanterns.length} Đèn Lồng Lớn · ${N.duration_s} giây · giữ ít nhất ${Math.ceil(T.win_ratio * N.lanterns.length - 1e-9)} đèn sáng tới bình minh</p>
   <p class="quote">${STORY[n]}</p><div class="btns"><button class="btn" data-a="go">Bắt đầu (Enter)</button></div>`);
 }
 function result() {
@@ -357,7 +368,7 @@ function result() {
   mode = "result";
   if (won) nightScores[night] = sim.score;
   totalScore = Object.values(nightScores).reduce((a, b) => a + b, 0);
-  const why = { all_lit: "Mọi đèn đã sáng!", dawn: "Bình minh đến trước khi kịp thắp hết đèn.", no_flames: "Mây đã hết Ngọn Lửa." }[sim.result.reason];
+  const why = { dawn_survived: "Mây đã giữ đảo sáng tới bình minh!", dawn: "Bình minh đến mà đảo chưa đủ đèn sáng.", no_flames: "Mây đã hết Ngọn Lửa." }[sim.result.reason];
   if (won) sfx.win(); else sfx.lose();
   sfx.stopMusic();
   if (won && night === 3) {
@@ -378,9 +389,11 @@ function settingsCard() {
   showCard(`<h2>Cài đặt</h2>
   <label class="set">Âm lượng <input id="vol" type="range" min="0" max="1" step="0.05" value="${settings.volume}"></label>
   <label class="set">Độ nhạy chuột <input id="sens" type="range" min="0.2" max="3" step="0.1" value="${settings.sens}"></label>
+  <label class="set">Bảng màu dễ phân biệt (mù màu) <input id="cb" type="checkbox" ${settings.cb ? "checked" : ""}></label>
   <div class="btns"><button class="btn" data-a="back">Xong</button></div>`);
   $("vol").oninput = (e) => { settings.volume = Number(e.target.value); sfx.setVolume(settings.volume); saveSettings(); };
   $("sens").oninput = (e) => { settings.sens = Number(e.target.value); saveSettings(); };
+  $("cb").onchange = (e) => { settings.cb = e.target.checked; saveSettings(); applyCB(); };
 }
 $("card").addEventListener("click", (e) => {
   const a = e.target.closest("[data-a]")?.dataset.a;
@@ -391,11 +404,11 @@ $("card").addEventListener("click", (e) => {
 function act(a) {
   if (a === "new") { for (const k in nightScores) delete nightScores[k]; totalScore = 0; intro(1); }
   else if (a.startsWith("night")) intro(Number(a.slice(5)));
-  else if (a === "go") startNight(introNight);
+  else if (a === "go") { startNight(introNight); lockPointer(); }
   else if (a === "next") intro(night + 1);
   else if (a === "retry") { sfx.stopMusic(); intro(night); }
-  else if (a === "menu") { sfx.stopMusic(); sim = null; menu(); }
-  else if (a === "resume") pending.pause = true;
+  else if (a === "menu") { sfx.stopMusic(); unlockPointer(); sim = null; menu(); }
+  else if (a === "resume") { pending.pause = true; lockPointer(); }
   else if (a === "settings") settingsCard();
   else if (a === "back") { if (sim?.state === "paused") pauseMenu(); else menu(); }
 }
@@ -421,11 +434,23 @@ addEventListener("keydown", (e) => {
 });
 addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 addEventListener("blur", () => keys.clear());
+// Mouse look: click the game once -> pointer lock, then plain mouse movement turns the camera.
+// Fallback (no pointer lock support): hold the left button and drag.
 let dragging = false;
-canvas.addEventListener("pointerdown", (e) => { if (e.button === 2) pending.pulse = true; else dragging = true; });
+const locked = () => document.pointerLockElement === canvas;
+const lockPointer = () => { if (mode === "play" && sim?.state === "playing" && !locked()) canvas.requestPointerLock?.()?.catch?.(() => {}); };
+const unlockPointer = () => { if (locked()) document.exitPointerLock(); };
+canvas.addEventListener("pointerdown", (e) => {
+  if (e.button === 2) pending.pulse = true;
+  else { dragging = true; lockPointer(); }
+});
 addEventListener("pointerup", () => (dragging = false));
+// Esc while locked is eaten by the browser to release the lock -> treat losing the lock as "pause"
+document.addEventListener("pointerlockchange", () => {
+  if (!locked() && mode === "play" && sim?.state === "playing") pending.pause = true;
+});
 addEventListener("pointermove", (e) => {
-  if (!dragging || mode !== "play") return;
+  if (mode !== "play" || sim?.state !== "playing" || (!locked() && !dragging)) return;
   camYaw -= e.movementX * 0.005 * settings.sens;
   camPitch = Math.min(1.2, Math.max(0.12, camPitch + e.movementY * 0.004 * settings.sens));
 });
@@ -458,8 +483,9 @@ function onEvent(ev) {
   const d = ev.data;
   switch (ev.name) {
     case "mote_picked": sfx.pickup(d.carried); break;
-    case "deposit": sfx.deposit(); break;
-    case "lantern_lit": { sfx.lit(); const L = sim.lanterns.find((x) => x.id === d.lantern_id); releaseSkyLanterns(L.x, L.y, L.z); toast("Một chiếc đèn đã sáng lại!"); break; }
+    case "deposit": case "refuel": sfx.deposit(); break;
+    case "lantern_out": sfx.lose(); toast("Một chiếc đèn đã cạn dầu và tắt!"); break;
+    case "lantern_lit": { sfx.lit(); const L = sim.lanterns.find((x) => x.id === d.lantern_id); releaseSkyLanterns(L.x, L.y, L.z); toast(d.relight ? "Đèn đã được thắp lại!" : "Một chiếc đèn đã sáng!"); break; }
     case "pulse": sfx.pulse(); pulseT = 0; pulseRing.position.set(sim.player.x, sim.player.y + 0.15, sim.player.z); break;
     case "player_hit": sfx.hit(); toast(d.by === "fall" ? `Rơi khỏi đảo! Mất ${d.lost} đom đóm` : d.dropped ? `Bị Bóng Mực chạm! Rơi ${d.dropped} đom đóm` : "Bị Bóng Mực chạm!"); break;
     case "shade_spawned": sfx.shade(); break;
@@ -467,9 +493,9 @@ function onEvent(ev) {
     case "charm_picked": sfx.charm(); toast("Bùa Gió! Chạy nhanh, lướt liên tục"); break;
     case "drifter_steal": sfx.steal(); toast(`Gió Lạc cướp ${d.amount} đom đóm!`); break;
     case "drifter_drop": toast("Gió Lạc thả lại đom đóm!"); break;
-    case "paused": pauseMenu(); break;
-    case "resumed": hideOverlay(); break;
-    case "game_over": result(); break;
+    case "paused": unlockPointer(); pauseMenu(); break;
+    case "resumed": hideOverlay(); lockPointer(); break;
+    case "game_over": unlockPointer(); result(); break;
   }
 }
 // jump sound: edge seen by the UI (sim has no jump event)
@@ -506,8 +532,9 @@ function syncViews(time) {
     v.g.position.set(s.x, s.y + Math.sin(time * 2 + s.x) * 0.1 + (st === "spawning" ? -1 + (1 - s.left / W.shade_spawning_ticks) : 0), s.z);
     v.g.lookAt(p.x, v.g.position.y, p.z);
     v.mat.color.setHex(st === "stunned" ? C.stunned : C.shade);
+    v.rimM.color.setHex(settings.cb ? C.rimCB : C.rim);
     v.rimM.opacity = st === "stunned" ? 0.2 : 0.7;
-    v.eyeM.color.setHex(st === "stunned" ? 0x777777 : st === "chase" ? 0xff9ad5 : 0xd9c4ff);
+    v.eyeM.color.setHex(st === "stunned" ? 0x777777 : settings.cb ? C.rimCB : st === "chase" || st === "drain" ? 0xff9ad5 : 0xd9c4ff);
     v.g.rotation.z = st === "stunned" ? Math.sin(time * 14) * 0.15 : 0;
   }
 
@@ -537,16 +564,26 @@ function syncViews(time) {
   for (const L of sim.lanterns) {
     const v = views.lanterns.get(L.id);
     if (L.lit) litCount++;
-    if (v.shown !== L.deposited) {
-      v.shown = L.deposited;
+    const cost = sim.costOf(L), shownKey = L.lit ? -2 : L.deposited * 100 + cost;
+    if (v.shown !== shownKey) {
+      v.shown = shownKey;
       v.ring.geometry.dispose();
-      v.ring.geometry = new THREE.RingGeometry(1.6, 1.9, 40, 1, Math.PI / 2, Math.max(0.001, (L.deposited / T.lantern_cost) * Math.PI * 2));
+      v.ring.geometry = new THREE.RingGeometry(1.6, 1.9, 40, 1, Math.PI / 2, Math.max(0.001, (L.lit ? 0 : L.deposited / cost) * Math.PI * 2));
     }
+    const fuel = sim.fuelOf(L), low = L.lit && fuel < T.low_fuel_threshold;
+    const blinkOff = low && Math.floor(time * 2) % 2 === 1; // slow 1 Hz blink when fuel < 30
     const fl = 1 + Math.sin(time * 7 + L.x) * 0.06;
-    v.paper.color.setHex(L.lit ? C.lit : C.off);
-    v.coreM.opacity = L.lit ? 0.9 : 0;
-    v.light.intensity = L.lit ? 40 * fl : 0;
-    v.safe.material.opacity = L.lit ? 0.35 : 0;
+    v.paper.color.setHex(L.lit && !blinkOff ? C.lit : C.off);
+    v.coreM.opacity = L.lit && !blinkOff ? 0.9 : 0;
+    v.light.intensity = L.lit ? (blinkOff ? 8 : 40 * fl) : 0;
+    v.safe.material.opacity = L.lit && !low ? 0.35 : 0;
+    v.lamp.scale.set(1, L.lit ? 1.25 : 1.25 * 0.8, 1); // unlit: squashed 20% + torn paper (readable without colour)
+    v.tear.visible = !L.lit;
+    v.fuelBar.visible = L.lit && !blinkOff;
+    v.fuelFg.scale.x = Math.max(0.001, fuel / T.fuel_max);
+    v.fuelFg.position.x = -0.8 * (1 - fuel / T.fuel_max);
+    v.fuelFg.material.color.setHex(low ? (settings.cb ? 0xffffff : 0xff5a5f) : C.lit);
+    v.fuelBar.lookAt(camera.position.x, v.fuelBar.getWorldPosition(v3).y, camera.position.z);
   }
   const k = litCount / sim.lanterns.length;
   ambient.intensity = 0.15 + 0.55 * k; // Ticket-02 formula
@@ -556,20 +593,22 @@ function syncViews(time) {
   $("flames").innerHTML = Array.from({ length: T.flames }, (_, i) => `<div class="flame ${i < p.flames ? "" : "off"}"></div>`).join("");
   const tl = Math.ceil(sim.timeLeft);
   const clock = $("clock");
-  clock.textContent = `${Math.floor(tl / 60)}:${String(tl % 60).padStart(2, "0")}`;
+  clock.textContent = `${sim.timeLeft <= 30 && settings.cb ? "⚠ " : ""}${Math.floor(tl / 60)}:${String(tl % 60).padStart(2, "0")}`;
   clock.classList.toggle("danger", sim.timeLeft <= 30);
   if (tl <= 10 && tl !== lastCountdown && sim.state === "playing") { lastCountdown = tl; sfx.tickBeep(); }
-  $("lamps").textContent = `Đèn ${litCount}/${sim.lanterns.length}`;
+  $("lamps").textContent = `Đèn sáng ${litCount}/${sim.lanterns.length} · cần ${sim.litNeeded} lúc bình minh`;
+  $("lamps").classList.toggle("short", litCount < sim.litNeeded);
   $("score").textContent = totalScore + sim.score;
-  $("motebar").innerHTML = Array.from({ length: T.carry_capacity }, (_, i) => `<div class="cell ${i < p.carried ? "on" : ""}"></div>`).join("");
+  $("motebar").innerHTML = Array.from({ length: sim.capacity }, (_, i) => `<div class="cell ${i < p.carried ? "on" : ""}"></div>`).join("") + `<span class="cap">${p.carried}/${sim.capacity}</span>`;
   const cdUi = (id, left, full, ok) => { const el = $(id); el.querySelector("i").style.height = `${(left / full) * 100}%`; el.classList.toggle("ready", left === 0 && ok); };
   cdUi("cd-dash", p.charm > 0 ? 0 : p.dashCd, T.dash_cooldown_s * W.tick_rate, true);
   cdUi("cd-pulse", p.pulseCd, T.pulse_cooldown_s * W.tick_rate, p.carried >= T.pulse_cost);
   $("charm").classList.toggle("hidden", p.charm === 0);
   $("charm").querySelector("span").textContent = `${Math.ceil(p.charm / W.tick_rate)}s`;
   const unlit = sim.lanterns.filter((L) => !L.lit).sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z));
-  const near = unlit.find((L) => Math.hypot(L.x - p.x, L.z - p.z) <= T.interact_radius);
-  $("hint").textContent = near ? `E — Nạp ánh sáng (${near.deposited}/${T.lantern_cost})` : "";
+  const near = sim.lanterns.filter((L) => (!L.lit || sim.fuelOf(L) < T.fuel_max) && Math.hypot(L.x - p.x, L.z - p.z) <= T.interact_radius)
+    .sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))[0];
+  $("hint").textContent = !near ? "" : near.lit ? `E — Châm dầu (${Math.floor(sim.fuelOf(near))}/${T.fuel_max})` : `E — Nạp ánh sáng (${near.deposited}/${sim.costOf(near)})`;
   $("hint").classList.toggle("on", !!near);
   const arrow = $("arrow");
   if (unlit[0]) {
