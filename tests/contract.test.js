@@ -13,7 +13,8 @@ const tmp = mkdtempSync(join(tmpdir(), "ddl-"));
 const cli = (...args) => spawnSync(process.execPath, ["src/headless.js", ...args], { cwd: root, encoding: "utf8" });
 
 test("CT-01 game.contract.json tuning equals the values the game uses", () => {
-  assert.equal(contract.contract_version, "1.2");
+  assert.equal(contract.contract_version, "1.3");
+  for (const k of ["bench_cmd", "soak_cmd"]) assert.equal(typeof contract[k], "string");
   assert.deepEqual(contract.tuning, JSON.parse(JSON.stringify(TUNING)));
   for (const k of ["team", "build_cmd", "run_cmd", "headless_cmd"]) assert.equal(typeof contract[k], "string");
 });
