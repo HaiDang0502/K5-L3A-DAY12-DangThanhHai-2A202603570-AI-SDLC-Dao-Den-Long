@@ -18,7 +18,7 @@ function stepN(sim, n, f = () => null) { const out = []; for (let k = 0; k < n &
 // ---------- kept from Phase 1 (contract v1.0 rules still valid) ----------
 test("AC-01 tick model: snapshot 0 before input, N steps, time_left = dur - sim_tick/60, night_start", () => {
   const l = lines(run({ seed: 1, scenario: parseScenario(quiet()), ticks: 120, snapshotEvery: 60 }));
-  assert.deepEqual(l.filter((x) => x.type === "snapshot").map((s) => [s.tick, s.sim_tick, s.time_left_s]), [[0, 0, 300], [60, 60, 299], [120, 120, 298]]);
+  assert.deepEqual(l.filter((x) => x.type === "snapshot").map((s) => [s.tick, s.sim_tick, s.time_left_s]), [[0, 0, 240], [60, 60, 239], [120, 120, 238]]); // Ticket-03: night 1 = 240 s
   assert.deepEqual(l[1], { type: "event", tick: 0, name: "night_start", data: { night: 1 } });
   assert.deepEqual(l.at(-1), { type: "end", ticks: 120, state: "playing", score: 0 });
 });
@@ -52,12 +52,13 @@ test("AC-04 pickup: XZ <= 1.0 and height diff <= 1.5, capacity 10, no points on 
   assert.deepEqual(high.step(null), [], "height diff 1.6 > 1.5");
 });
 
-test("AC-05 lantern: radius 2, nearest unlit (tie -> smaller id), min(carried, missing), +10/mote +100/lit", () => {
+// Ticket-03 changed scoring: +5 per mote (was +10). Lit lanterns now also accept refuel (see fuel.test.js).
+test("AC-05 lantern: radius 2, nearest unlit (tie -> smaller id), min(carried, missing), +5/mote +100/first light", () => {
   const s = new Sim({ scenario: quiet({ player: { pos: [0, 0, 23], carried: 7 }, lanterns: [{ id: "L1", deposited: 4 }] }) });
   const ev = s.step({ interact: true });
-  assert.deepEqual(ev.map((e) => [e.name, e.data]), [["deposit", { lantern_id: "L1", amount: 6, deposited: 10 }], ["lantern_lit", { lantern_id: "L1" }]]);
+  assert.deepEqual(ev.map((e) => [e.name, e.data]), [["deposit", { lantern_id: "L1", amount: 6, deposited: 10 }], ["lantern_lit", { lantern_id: "L1", relight: false }]]);
   assert.equal(s.player.carried, 1);
-  assert.equal(s.score, 6 * 10 + 100);
+  assert.equal(s.score, 6 * 5 + 100);
   const tie = new Sim({ scenario: quiet({ player: { pos: [0, 0, 0], carried: 2 }, lanterns: [{ id: "L1", pos: [1, 0, 0] }, { id: "L2", pos: [-1, 0, 0] }] }) });
   assert.equal(tie.step({ interact: true })[0].data.lantern_id, "L1");
   const far = new Sim({ scenario: quiet({ player: { pos: [0, 0, 22.9], carried: 5 } }) });
@@ -118,12 +119,14 @@ test("AC-08 fall off island (Y < -10): -1 flame, lose all motes, wait 60, respaw
   assert.deepEqual(l2.at(-1).data, { result: "lost", reason: "no_flames" });
 });
 
-test("AC-09 win/lose order: all lit -> won even on the last tick; dawn otherwise", () => {
+// Ticket-03 REPLACED "won as soon as all lanterns are lit" (all_lit) by "survive to dawn with >= ceil(0.6 n) lit".
+test("AC-09 win/lose at dawn: lighting the last lantern no longer ends the night; dawn decides", () => {
   const lit = ["L1", "L2", "L3", "L4"].map((id) => ({ id, lit: true }));
-  const s = new Sim({ scenario: quiet({ lanterns: [...lit, { id: "L5", pos: [0, 0, 1], deposited: 9 }], player: { carried: 1 }, time_left_s: 1 / 60 }) });
+  const s = new Sim({ scenario: quiet({ lanterns: [...lit, { id: "L5", pos: [0, 0, 1], deposited: 9 }], player: { carried: 1 }, time_left_s: 2 / 60 }) });
   const ev = s.step({ interact: true });
-  assert.deepEqual(ev.at(-1).data, { result: "won", reason: "all_lit" });
-  assert.equal(s.score, 10 + 100 + 0 * 2 + 3 * 50);
+  assert.ok(!ev.some((e) => e.name === "game_over"), "no early win");
+  const ev2 = s.step({ interact: false });
+  assert.deepEqual(ev2.at(-1).data, { result: "won", reason: "dawn_survived" });
   const d = lines(run({ seed: 1, scenario: parseScenario(quiet({ time_left_s: 1 })), ticks: 999 }));
   assert.deepEqual(d.find((x) => x.name === "game_over"), { type: "event", tick: 60, name: "game_over", data: { result: "lost", reason: "dawn" } });
 });
