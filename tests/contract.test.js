@@ -13,7 +13,7 @@ const tmp = mkdtempSync(join(tmpdir(), "ddl-"));
 const cli = (...args) => spawnSync(process.execPath, ["src/headless.js", ...args], { cwd: root, encoding: "utf8" });
 
 test("CT-01 game.contract.json tuning equals the values the game uses", () => {
-  assert.equal(contract.contract_version, "1.0");
+  assert.equal(contract.contract_version, "1.1");
   assert.deepEqual(contract.tuning, JSON.parse(JSON.stringify(TUNING)));
   for (const k of ["team", "build_cmd", "run_cmd", "headless_cmd"]) assert.equal(typeof contract[k], "string");
 });
@@ -59,6 +59,6 @@ test("CT-05 contract example scenario + inputs run and pick the mote at the exac
   assert.equal(r.status, 0, r.stderr);
   const lines = readFileSync(out, "utf8").trim().split("\n").map((l) => JSON.parse(l));
   const pick = lines.find((l) => l.name === "mote_picked");
-  // mote at z=5, pickup 1.5 -> reached when z = 3.5 = 6 m/s * 35/60 s
-  assert.equal(pick.tick, 35);
+  // v1.1: mote at z=5, pickup 1.0 -> reached when z = 4.0 = 6 m/s * 40/60 s (was tick 35 with v1.0 radius 1.5)
+  assert.equal(pick.tick, 40);
 });
