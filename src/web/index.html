@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đảo Đèn Lồng</title>
+  <link rel="stylesheet" href="/src/web/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "/node_modules/three/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="panel">
+      <div class="row"><span class="lbl">Lửa</span><span id="flames"></span></div>
+      <div class="row"><span class="lbl">Đom đóm</span><span id="carried"></span></div>
+      <div class="row"><span class="lbl">Đèn</span><span id="lit"></span></div>
+    </div>
+    <div class="panel right">
+      <div class="big" id="score">0</div>
+      <div class="row"><span class="lbl">Bình minh sau</span><span id="time"></span></div>
+      <div class="row"><span class="lbl">Tỏa sáng</span><span class="bar"><i id="pulsebar"></i></span></div>
+    </div>
+    <div id="hint"></div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="overlay">
+    <div class="card">
+      <h1>Đảo Đèn Lồng</h1>
+      <p class="sub" id="ovsub">Đêm 1 – Đảo Bến</p>
+      <p id="ovtext">Sương đen đã nuốt hết ánh sáng của đảo. Hãy giúp Mây gom đom đóm và thắp lại 5 Đèn Lồng Lớn trước bình minh.</p>
+      <table class="keys">
+        <tr><td>W A S D</td><td>Di chuyển (theo hướng camera)</td></tr>
+        <tr><td>Kéo chuột / Z C</td><td>Xoay camera</td></tr>
+        <tr><td>Space</td><td>Nhảy</td></tr>
+        <tr><td>E</td><td>Nạp ánh sáng vào đèn (đứng gần đèn)</td></tr>
+        <tr><td>F / Chuột phải</td><td>Tỏa sáng: đẩy lùi và làm choáng Bóng Mực (tốn 1 đom đóm)</td></tr>
+        <tr><td>M</td><td>Bật/tắt âm thanh</td></tr>
+      </table>
+      <button id="play">Bắt đầu (Enter)</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/web/main.js"></script>
+</body>
+</html>
