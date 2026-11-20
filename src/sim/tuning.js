@@ -8,9 +8,9 @@ export const TUNING = Object.freeze({
   interact_radius: 2,
   pulse_cost: 3,
   pulse_radius: 5,
-  night1_duration_s: 300,
-  night2_duration_s: 330,
-  night3_duration_s: 360,
+  night1_duration_s: 240,
+  night2_duration_s: 270,
+  night3_duration_s: 300,
   flames: 3,
   invuln_s: 1.5,
   hit_drop_ratio: 0.5,
@@ -24,7 +24,18 @@ export const TUNING = Object.freeze({
   dash_speed: 14,
   dash_duration_s: 0.2,
   dash_cooldown_s: 1.5,
-  score: Object.freeze({ per_mote: 10, per_lantern: 100, per_stun: 5, per_second_left: 2, per_flame_left: 50 }),
+  // Ticket-03 (v1.2)
+  fuel_max: 100,
+  fuel_decay_per_s: 1.0,
+  fuel_per_mote: 10,
+  relight_cost: 5,
+  win_ratio: 0.6,
+  drain_per_s: 5,
+  low_fuel_threshold: 30,
+  capacity_max: 20,
+  // per_second_left = 0: time bonus removed by Ticket-03. Extra keys document the other v1.2 score rules.
+  score: Object.freeze({ per_mote: 5, per_lantern: 100, per_stun: 5, per_second_left: 0, per_flame_left: 50,
+    per_relight: 40, per_stun_draining: 15, per_lit_lantern_at_dawn: 50, per_fuel_at_dawn: 1 }),
 });
 
 // Other Ticket-02 constants (not contract keys) + a few internal assumptions (marked A).
@@ -74,4 +85,7 @@ export const WORLD = Object.freeze({
   wind_ticks: 300,
   wind_speed: 2,
   wind_warn_ticks: 120,
+  drain_reach: 2, // shade starts draining within 2 m (XZ) of its weak lantern
+  drain_event_every: 60,
+  capacity_per_light: 2,
 });

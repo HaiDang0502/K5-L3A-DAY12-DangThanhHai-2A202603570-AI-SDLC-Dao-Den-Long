@@ -34,7 +34,7 @@ const ground3 = (x, z) => {
 export const NIGHTS = {
   1: {
     name: "Đảo Bến",
-    duration_s: 300,
+    duration_s: 240,
     ground: ground1,
     start: [0, 0, 0],
     lanterns: [[0, 0, 25], [23.8, 0, 7.7], [14.7, 0, -20.2], [-14.7, 0, -20.2], [-23.8, 0, 7.7]],
@@ -51,7 +51,7 @@ export const NIGHTS = {
   },
   2: {
     name: "Đảo Cau",
-    duration_s: 330,
+    duration_s: 270,
     ground: ground2,
     start: [0, 0, 0],
     lanterns: [[0, 0, 20], [17, 0, -10], [-17, 0, -10], [70, 0, 20], [87, 0, -10], [53, 0, -10]],
@@ -71,7 +71,7 @@ export const NIGHTS = {
   },
   3: {
     name: "Đảo Chuông",
-    duration_s: 360,
+    duration_s: 300,
     ground: ground3,
     start: [0, 0, -30], // spec start (0,0,0) is inside the bell tower on night 3 -> assumption A2-03
     lanterns: [[0, 6, 6], [18, 3, 10], [-18, 3, 10], [35, 0, -10], [-35, 0, -10], [20, 0, -35], [-20, 0, -35]],
