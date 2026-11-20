@@ -13,35 +13,24 @@
   <canvas id="c"></canvas>
 
   <div id="hud" class="hidden">
-    <div class="panel">
-      <div class="row"><span class="lbl">Lửa</span><span id="flames"></span></div>
-      <div class="row"><span class="lbl">Đom đóm</span><span id="carried"></span></div>
-      <div class="row"><span class="lbl">Đèn</span><span id="lit"></span></div>
+    <div id="flames" class="hud-tl"></div>
+    <div id="clock" class="hud-tc">5:00</div>
+    <div class="hud-tr"><div id="lamps">Đèn 0/5</div><div id="score">0</div></div>
+    <div id="motebar" class="hud-bc"></div>
+    <div class="hud-br">
+      <div class="cd" id="cd-dash"><span>Lướt</span><i></i><b>Shift</b></div>
+      <div class="cd" id="cd-pulse"><span>Tỏa Sáng</span><i></i><b>F</b></div>
     </div>
-    <div class="panel right">
-      <div class="big" id="score">0</div>
-      <div class="row"><span class="lbl">Bình minh sau</span><span id="time"></span></div>
-      <div class="row"><span class="lbl">Tỏa sáng</span><span class="bar"><i id="pulsebar"></i></span></div>
-    </div>
+    <div id="charm" class="hidden">Bùa Gió <span></span></div>
     <div id="hint"></div>
+    <div id="arrow">▲</div>
     <div id="toast"></div>
+    <div id="windwarn" class="hidden">Gió sắp nổi…</div>
+    <div id="fps" class="hidden"></div>
   </div>
 
   <div id="overlay">
-    <div class="card">
-      <h1>Đảo Đèn Lồng</h1>
-      <p class="sub" id="ovsub">Đêm 1 – Đảo Bến</p>
-      <p id="ovtext">Sương đen đã nuốt hết ánh sáng của đảo. Hãy giúp Mây gom đom đóm và thắp lại 5 Đèn Lồng Lớn trước bình minh.</p>
-      <table class="keys">
-        <tr><td>W A S D</td><td>Di chuyển (theo hướng camera)</td></tr>
-        <tr><td>Kéo chuột / Z C</td><td>Xoay camera</td></tr>
-        <tr><td>Space</td><td>Nhảy</td></tr>
-        <tr><td>E</td><td>Nạp ánh sáng vào đèn (đứng gần đèn)</td></tr>
-        <tr><td>F / Chuột phải</td><td>Tỏa sáng: đẩy lùi và làm choáng Bóng Mực (tốn 1 đom đóm)</td></tr>
-        <tr><td>M</td><td>Bật/tắt âm thanh</td></tr>
-      </table>
-      <button id="play">Bắt đầu (Enter)</button>
-    </div>
+    <div class="card" id="card"></div>
   </div>
 
   <script type="module" src="/src/web/main.js"></script>
