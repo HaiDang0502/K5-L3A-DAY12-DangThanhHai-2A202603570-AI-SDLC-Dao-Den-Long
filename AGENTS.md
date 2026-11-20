@@ -1,6 +1,6 @@
 # AGENTS.md — Đảo Đèn Lồng
 
-3D web game (Three.js), 3 nights, + deterministic headless mode for **Test Contract v1.1** (Ticket-02). Node >= 18, ESM, no build step.
+3D web game (Three.js), 3 nights, + deterministic headless mode for **Test Contract v1.2** (Ticket-03; Ticket-02 rules still apply unless replaced). Node >= 18, ESM, no build step.
 
 ## Commands
 - Install: `npm install` (only dependency: three, for the browser build)
@@ -17,7 +17,9 @@
 - `src/sim/maps.js` — standard maps of nights 1-3 (ground height function, lanterns, spawn points, pads).
 - `Sim.step` follows the mandatory per-tick order of Ticket-02 (numbered comments). Keep that order.
 - `src/web/` — rendering + input only. Never put rules here; extras here must not change headless output.
-- `tests/` — AC-xx (rules), FT-xx (one+ headless scenario per Ticket-02 feature), CT-xx (contract/CLI).
+- `tests/` — AC-xx (rules), FT-xx (Ticket-02 features), FL-xx (Ticket-03 fuel/win), CT-xx (contract/CLI).
+- Lantern fuel is an INTEGER in 1/60 units (`FU`); round only in output (1 decimal). See docs/adr/0001.
+- Replaced rules: update the test with a comment naming the ticket, list it in CHANGELOG.md; never skip.
 
 ## Rules for agents
 - The lab spec (PRD/tickets + Test Contract) is the source of truth. Quote it; do not invent requirements.
