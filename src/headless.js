@@ -52,7 +52,7 @@ function main() {
   const a = parseArgs(process.argv.slice(2));
   const seed = intArg(a, "seed", { required: true });
   const night = intArg(a, "night", { required: true });
-  if (night !== 1) fail(1, `night ${night} is not available (only night 1)`);
+  if (![1, 2, 3].includes(night)) fail(1, `night ${night} is not available (1, 2 or 3)`);
   const ticks = intArg(a, "ticks", { required: true, min: 0 });
   const snapshotEvery = intArg(a, "snapshot-every", { def: 10, min: 1 });
   if (!a.out) fail(1, "--out is required");
@@ -62,7 +62,7 @@ function main() {
   try {
     if (a.scenario) scenario = parseScenario(readJson(a.scenario, "scenario"));
     if (a.inputs) frames = parseInputs(readJson(a.inputs, "inputs"));
-    const out = run({ seed, scenario, frames, ticks, snapshotEvery });
+    const out = run({ seed, night, scenario, frames, ticks, snapshotEvery });
     writeFileSync(a.out, out);
   } catch (e) {
     if (e instanceof ValidationError) fail(2, e.message);

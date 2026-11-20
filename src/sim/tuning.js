@@ -1,49 +1,77 @@
-// Single source of truth for gameplay numbers.
-// game.contract.json "tuning" MUST match these values (checked by tests/contract.test.js).
+// Ticket-02 standard numbers. game.contract.json "tuning" MUST equal TUNING (tests/contract.test.js CT-01).
 export const TUNING = Object.freeze({
-  player_speed: 6, // m/s
-  carry_capacity: 5, // motes carried at once
-  lantern_cost: 5, // motes needed to light one lantern
+  player_speed: 6,
+  carry_capacity: 10,
+  lantern_cost: 10,
   lantern_count_night1: 5,
-  pickup_radius: 1.5, // m
-  interact_radius: 3, // m (player feet -> lantern base)
-  pulse_cost: 1, // carried motes consumed per pulse
-  pulse_radius: 6, // m
+  pickup_radius: 1,
+  interact_radius: 2,
+  pulse_cost: 3,
+  pulse_radius: 5,
   night1_duration_s: 300,
-  flames: 3, // health
+  night2_duration_s: 330,
+  night3_duration_s: 360,
+  flames: 3,
   invuln_s: 1.5,
-  hit_drop_ratio: 0.5, // floor(carried * ratio) motes are lost on hit
+  hit_drop_ratio: 0.5,
   pulse_stun_s: 2,
   pulse_push_m: 4,
-  pulse_cooldown_s: 1,
-  safe_radius: 6, // shades can never be within this distance of ANY lantern
-  shade_speed: 3.5,
+  pulse_cooldown_s: 3,
+  safe_radius: 6,
+  shade_speed: 4,
   shade_hit_radius: 1,
-  fall_enabled: false, // island edge is a wall, no falling
-  score: Object.freeze({
-    per_mote: 10,
-    per_lantern: 100,
-    per_stun: 20,
-    per_second_left: 1, // only on win, floor(time_left_s)
-    per_flame_left: 50, // only on win
-  }),
+  fall_enabled: true,
+  dash_speed: 14,
+  dash_duration_s: 0.2,
+  dash_cooldown_s: 1.5,
+  score: Object.freeze({ per_mote: 10, per_lantern: 100, per_stun: 5, per_second_left: 2, per_flame_left: 50 }),
 });
 
-// Internal constants (not part of the contract).
+// Other Ticket-02 constants (not contract keys) + a few internal assumptions (marked A).
 export const WORLD = Object.freeze({
   tick_rate: 60,
-  island_radius: 40, // player & shades are clamped inside
-  lantern_ring_radius: 25,
-  shade_height: 1, // shade.pos.y (center of body)
-  jump_speed: 7, // m/s
-  gravity: 20, // m/s^2
-  mote_target: 25, // random motes kept active up to this number
-  mote_respawn_s: 3,
-  mote_min_r: 3,
-  mote_max_r: 38,
-  shade_initial: 2, // spawned during setup (no events)
-  shade_max: 5,
-  shade_spawn_every_s: 30,
-  shade_spawn_r: 36,
-  shade_spawn_min_player_dist: 15,
+  jump_speed: 7,
+  gravity: 20,
+  fall_y: -10,
+  respawn_wait_ticks: 60,
+  step_height: 0.3, // A: max ledge Mây can step up; higher ground is a wall
+  pickup_dy: 1.5,
+  hit_dy: 1.5,
+  pulse_center_dy: 0.8,
+  pulse_push_ticks: 15,
+  shade_height: 1, // shade.pos.y = ground + 1 (body centre)
+  shade_detect: 12,
+  shade_lose: 18,
+  shade_wander_speed: 1.5, // A
+  shade_spawning_ticks: 30, // A: "spawning" state length, harmless & frozen
+  shade_first_spawn: 300,
+  shade_first_count: 2,
+  shade_min_player_dist: 15,
+  recoil_ticks: 60,
+  recoil_m: 2,
+  evict_ticks: 30,
+  drop_ttl: 480,
+  drop_r_min: 1.5,
+  drop_r_max: 2.5,
+  mote_initial: 20,
+  mote_cap: 30,
+  mote_every: 240,
+  charm_ticks: 600,
+  charm_respawn: 2700,
+  charm_speed: 7.2,
+  drifter_speed: 7,
+  drifter_idle_speed: 2,
+  drifter_max: 2,
+  drifter_every: 1200,
+  drifter_trigger_carried: 5,
+  drifter_trigger_dist: 15,
+  drifter_steal_r: 1.2,
+  drifter_steal_max: 3,
+  drifter_flee_ticks: 240,
+  drifter_drop_vanish: 120,
+  drifter_height: 1.5, // A
+  wind_every: 1800,
+  wind_ticks: 300,
+  wind_speed: 2,
+  wind_warn_ticks: 120,
 });
