@@ -1,5 +1,26 @@
 # Changelog
 
+## [phase-4] / v1.0.0 — Ticket-04 "Bình minh: phát hành v1.0.0" (Contract v1.3)
+
+### Thêm mới
+- `game.contract.json`: `contract_version` **1.3**, thêm `bench_cmd` (`node scripts/bench.js`) và `soak_cmd` (`node --expose-gc scripts/soak.js`). `run_cmd` đổi thành `node scripts/serve.js` để nhận được `--export-leaderboard`.
+- **Benchmark:**
+  - Cảnh chuẩn (`src/sim/bench.js`): 200 Bóng Mực `wander`, 100 đom đóm, L1–L3 đầy dầu. Tắt sinh thêm, sát thương, nhặt, hao dầu và kết thúc Đêm.
+  - Camera bay vòng bán kính 30 m, cao 15 m, 15 s một vòng.
+  - Đo trong Chrome thật ở cửa sổ 1280×720, tắt vsync. Ghi `bench.json` (avg 139 / p1 71.9 FPS trên máy tác giả).
+- **Soak test:** 10 Đêm trong cùng một tiến trình, input ngẫu nhiên theo seed. Ghi `soak.json` (0 crash, RAM ×1.1).
+- **Bảng xếp hạng cục bộ:** top 10 lưu trên đĩa, có màn hình xem và lệnh `--export-leaderboard`.
+- **Dễ tiếp cận:** đổi phím (báo trùng, khôi phục mặc định), phụ đề và mũi tên chỉ Bóng Mực, giảm chuyển động, chữ ≥ 18 px và chữ lớn ×1.25.
+- **Đóng gói:** `npm run package` tạo `dist/dao-den-long-v1.0.0.tar.gz`. Gói đã kèm three.js, chỉ cần Node để chạy.
+
+### Thay đổi phá vỡ tương thích
+- Không có thay đổi nào với luật hay định dạng headless của v1.0–v1.2. Contract chỉ thêm khóa mới.
+- `run_cmd` đổi từ `npm start` sang `node scripts/serve.js`. `npm start` vẫn chạy được.
+- Các phím di chuyển không còn nhận thêm phím mũi tên cố định. Phím nào được dùng hoàn toàn theo cấu hình đổi phím.
+
+### Test
+- Thêm `tests/release.test.js` (RL-01…05): quy tắc bảng xếp hạng, lệnh xuất, cảnh bench, công thức số đo, soak. Tổng cộng 47 test.
+
 ## [phase-3] — Ticket-03 "Đèn cạn dầu" (Contract v1.2)
 
 ### Thay đổi phá vỡ tương thích (breaking)
@@ -46,7 +67,26 @@
   - P2-16: số tick một đêm 18000/19800/21600 đổi thành 14400/16200/18000.
 
 ## [phase-2] — Ticket-02 "Ba hòn đảo" (Contract v1.1)
-Có số chuẩn, 3 bản đồ, lướt, tạm dừng, Gió Lạc, Bùa Gió, rơi khỏi đảo. Chi tiết trong `docs/notes/phase-2.md`.
+
+### Thay đổi phá vỡ tương thích
+- Số chuẩn thay mọi số tự chọn ở Phase 1:
+  - nhặt 1.0 m, sức chứa 10, đèn cần 10;
+  - Tỏa Sáng tốn 3, bán kính 5 m (3D), hồi chiêu 3 s;
+  - Bóng Mực 4 m/s.
+- Điểm +10 tính khi **nạp** đom đóm, không còn tính khi nhặt.
+- Vùng an toàn chỉ còn quanh **đèn đã sáng**.
+- Bị đánh: đom đóm rơi ra đất và nhặt lại được. Có thể rơi khỏi đảo (`player_hit` với `by: "fall"`).
+- Trạng thái Bóng Mực: `spawning`, `wander`, `chase`, `recoil`, `stunned`.
+
+### Thêm mới
+- `--night 1|2|3` với bản đồ chuẩn: Đảo Bến, Đảo Cau (cầu tre, bục nhảy), Đảo Chuông (3 tầng, dốc, tháp, gió).
+- Lướt, tạm dừng, Gió Lạc, Bùa Gió.
+- Trường snapshot mới: `night`, `wind`, `vel`, `grounded`, cooldown, `motes`/`drifters`/`charms`.
+- Sự kiện mới: `dash`, `charm_picked`, `drifter_steal`, `drifter_drop`, `night_start`, `paused`, `resumed`.
+- Web: chuỗi 3 Đêm kèm lời Ông Đăng, tạm dừng và cài đặt, HUD đầy đủ, bảng màu chuẩn, nhạc nền và hiệu ứng âm thanh, zoom bằng cuộn chuột.
 
 ## [phase-1] — PRD-0 (Contract v1.0)
-Đêm 1 chơi được, có chế độ headless.
+- Đêm 1 chơi được từ đầu tới thắng/thua (Three.js, chạy trên trình duyệt).
+- Chế độ headless theo Test Contract v1.0, có `game.contract.json`.
+- Lõi luật chơi tất định dùng chung cho game và headless.
+- 22 test và bằng chứng headless; harness gồm AGENTS.md, skill `verify-game`, hook Stop và CI.

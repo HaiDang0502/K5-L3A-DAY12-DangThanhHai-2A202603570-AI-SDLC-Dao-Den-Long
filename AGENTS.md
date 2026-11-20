@@ -1,11 +1,14 @@
 # AGENTS.md — Đảo Đèn Lồng
 
-3D web game (Three.js), 3 nights, + deterministic headless mode for **Test Contract v1.2** (Ticket-03; Ticket-02 rules still apply unless replaced). Node >= 18, ESM, no build step.
+3D web game (Three.js), 3 nights, + deterministic headless mode for **Test Contract v1.3** (Ticket-04 adds bench/soak/leaderboard; v1.0-v1.2 rules still apply unless replaced). Node >= 18, ESM, no build step.
 
 ## Commands
 - Install: `npm install` (only dependency: three, for the browser build)
 - Play: `npm start` -> http://localhost:8080
 - Tests: `npm test` (node:test, must be green before finishing)
+- Bench (opens Chrome 1280x720): `node scripts/bench.js --seed 42 --duration 30 --out bench.json`
+- Soak: `node --expose-gc scripts/soak.js --seed 7 --nights 10 --out soak.json`
+- Release bundle: `npm run package`; leaderboard export: `node scripts/serve.js --export-leaderboard out.json`
 - Evidence: `npm run proof` -> regenerates `docs/proof/phase-<N>/results.md` from the real CLI
 - Headless: `node src/headless.js --seed 1 --night 1|2|3 --ticks 600 --out out.jsonl`
 - Play a given night directly: `http://localhost:8080/?autostart=1&night=3&fps` (`lit=N`, `seed=N` for screenshots)

@@ -1,15 +1,21 @@
 # Đảo Đèn Lồng
 
-> **Video demo:** _(sẽ thêm ở Phase 4 — Release `v1.0.0`)_
+> **Video demo:** `demo.mp4` đính kèm [GitHub Release v1.0.0](https://github.com/HaiDang0502/K5-L3A-Day12-DangThanhHai-2A202603570-AI-SDLC/releases/tag/v1.0.0) · **Bản chạy được:** `dao-den-long-v1.0.0.tar.gz` (cùng Release)
 > Đề bài lab: [lab board](https://claude.ai/artifact/Q1RYyv1dxjUczzCbd2ZnoW) · [GUIDE](GUIDE.md) · [RUBRIC](RUBRIC.md) · [SUBMISSION](SUBMISSION.md) · [RULES](RULES.md) · [CHECKPOINTS](CHECKPOINTS.md)
 
-Game 3D góc nhìn thứ ba (Three.js, chạy trên trình duyệt). Mây, người giữ đèn nhỏ tuổi đội nón lá có treo một chiếc đèn lồng nhỏ, gom đom đóm để thắp lại các Đèn Lồng Lớn qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Chuông. Mây phải né Bóng Mực và Gió Lạc trong sương đen. Mọi luật chơi nằm trong một lõi mô phỏng tất định (`src/sim/`), dùng chung cho game có giao diện và chế độ headless theo **Test Contract v1.2**.
+Game 3D góc nhìn thứ ba (Three.js, chạy trên trình duyệt). Mây, người giữ đèn nhỏ tuổi đội nón lá có treo một chiếc đèn lồng nhỏ, gom đom đóm để thắp lại các Đèn Lồng Lớn qua **3 Đêm**: Đảo Bến, Đảo Cau, Đảo Chuông. Mây phải né Bóng Mực và Gió Lạc trong sương đen. Mọi luật chơi nằm trong một lõi mô phỏng tất định (`src/sim/`), dùng chung cho game có giao diện và chế độ headless theo **Test Contract v1.3**.
 
 ![Đảo Đèn Lồng — Đêm 3, Đảo Chuông](docs/proof/phase-2/screenshot-night3.png)
 
 - **Chế độ mù màu:** vào Cài đặt, bật "Bảng màu dễ phân biệt".
 
-## Cài đặt và chạy (macOS / Linux / Windows, cần Node.js ≥ 18)
+## Yêu cầu hệ thống
+
+- **Node.js ≥ 18** (đã thử trên Node 24). Dùng để chạy server, headless, test, bench và soak.
+- **Trình duyệt hỗ trợ WebGL2**: Chrome, Edge, Firefox hoặc Safari bản mới. Lệnh bench cần Chrome, Chromium hoặc Edge; đặt `CHROME_PATH` nếu trình duyệt không nằm ở chỗ cài đặt mặc định.
+- Hệ điều hành: macOS, Linux hoặc Windows. CI chạy test trên ubuntu và macos.
+
+## Cài đặt và chạy (3 lệnh)
 
 ```bash
 git clone <repo-url> dao-den-long && cd dao-den-long
@@ -17,13 +23,27 @@ npm install
 npm start          # mở http://localhost:8080
 ```
 
-Headless (Test Contract v1.0):
+Hoặc dùng **bản phát hành** (không cần `npm install`): tải `dao-den-long-v1.0.0.tar.gz` ở GitHub Release v1.0.0, rồi chạy `tar -xzf dao-den-long-v1.0.0.tar.gz && cd dao-den-long-v1.0.0 && node scripts/serve.js`.
 
-```bash
-node src/headless.js --seed 1 --night 1|2|3 --ticks 3600 --out out.jsonl [--scenario s.json] [--inputs i.json] [--snapshot-every 10]
-```
+| Việc | Lệnh |
+|---|---|
+| Test (47 test) | `npm test` |
+| Bằng chứng headless (25 kiểm tra, CLI thật) | `npm run proof` → [docs/proof/phase-4/results.md](docs/proof/phase-4/results.md) |
+| Headless (Contract v1.3) | `node src/headless.js --seed 1 --night 1|2|3 --ticks 3600 --out out.jsonl [--scenario s.json] [--inputs i.json] [--snapshot-every 10]` |
+| **Benchmark** | `node scripts/bench.js --seed 42 --duration 30 --out bench.json` (mở cửa sổ Chrome 1280×720, tắt vsync) |
+| **Soak test** | `node --expose-gc scripts/soak.js --seed 7 --nights 10 --out soak.json` |
+| Xuất bảng xếp hạng | `node scripts/serve.js --export-leaderboard out.json` |
+| Đóng gói bản phát hành | `npm run package` → `dist/dao-den-long-v1.0.0.tar.gz` |
 
-Kiểm chứng: `npm test` (42 test: luật chơi, tính năng Ticket-02, nhiên liệu Ticket-03, contract) · `npm run proof` (chạy CLI thật trên các scenario, ghi [docs/proof/phase-3/results.md](docs/proof/phase-3/results.md)). Đếm FPS: mở `http://localhost:8080/?autostart=1&night=3&fps`.
+**Kết quả đo trên máy của tác giả** (chỉ để tham khảo; máy chấm của giảng viên mới là số chính thức):
+
+| | Kết quả | Ngưỡng |
+|---|---|---|
+| Bench `avg_fps` / `p1_low_fps` / `frame_ms_p95` | 139 / 71.9 / 10.3 ms | ≥ 60 / ≥ 30 |
+| Bench `load_ms` | 690 | ≤ 10000 |
+| Soak: crash, RAM đầu → cuối | 0, 52.9 → 58.2 MB (×1.1) | 0, ≤ ×1.2 |
+
+Cấu hình máy và renderer nằm trong [bench.json](bench.json). `peak_mem_mb` để `null` vì đây là bản web: trang web không đọc được RSS của trình duyệt. File có thêm trường `js_heap_peak_mb` (heap JS của trang). Vsync được tắt bằng cờ Chrome `--disable-gpu-vsync --disable-frame-rate-limit`.
 
 ## Điều khiển
 
@@ -37,6 +57,8 @@ Kiểm chứng: `npm test` (42 test: luật chơi, tính năng Ticket-02, nhiên
 | E | Nạp đom đóm vào đèn gần nhất (trong 2 m) |
 | F / chuột phải | Tỏa Sáng: tốn 3 đom đóm, choáng 2 s và đẩy lùi 4 m mọi Bóng Mực trong 5 m (hồi chiêu 3 s) |
 | Esc / P | Tạm dừng: Tiếp tục / Chơi lại Đêm / Cài đặt / Về menu |
+
+Mọi phím hành động đều **đổi được** trong Cài đặt → Đổi phím. Game báo khi phím bị trùng, có nút "Khôi phục mặc định", và cấu hình được lưu lại.
 | Enter | Bắt đầu, sang Đêm tiếp theo, chơi lại |
 
 ## Luật chơi và cách tính điểm (Ticket-03, Contract v1.2)
@@ -69,6 +91,27 @@ Kiểm chứng: `npm test` (42 test: luật chơi, tính năng Ticket-02, nhiên
 
 Tổng điểm là tổng điểm các Đêm đã thắng. Mọi con số nằm trong [src/sim/tuning.js](src/sim/tuning.js) và được khai báo y hệt trong [game.contract.json](game.contract.json) (test CT-01). Bản đồ chuẩn nằm trong [src/sim/maps.js](src/sim/maps.js). Thay đổi phá vỡ tương thích được liệt kê trong [CHANGELOG.md](CHANGELOG.md), quyết định thiết kế trong [ADR 0001](docs/adr/0001-lantern-fuel-and-dawn-win.md).
 
+## Bảng xếp hạng và dễ tiếp cận (Ticket-04)
+
+- **Bảng xếp hạng cục bộ:** sau màn Bình Minh hoặc sau khi thua, người chơi nhập tên để lưu điểm.
+  - Tên dài 3–12 ký tự, gồm chữ, số hoặc `_`. Tiếng Việt có dấu được chấp nhận.
+  - Mỗi mục lưu `name`, `score` (tổng điểm các Đêm đã thắng), `nights_won`, `achieved_at` (ISO 8601 có múi giờ), `seed`.
+  - Giữ top 10, sắp theo điểm giảm dần; bằng điểm thì ai đạt trước đứng trên.
+  - Dữ liệu nằm trong file `data/leaderboard.json` trên đĩa, do server ghi. Nếu chạy trên host tĩnh không có server thì dùng localStorage.
+  - Xem từ menu chính, nút "Bảng xếp hạng".
+- **Cài đặt** (đều được lưu lại):
+  - âm lượng, độ nhạy chuột;
+  - đổi phím;
+  - bảng màu dễ phân biệt;
+  - **giảm chuyển động** (tắt rung camera và chớp màn hình khi bị đánh);
+  - **chữ lớn ×1.25**. Chữ UI tối thiểu 18 px ở 1280×720.
+- **Phụ đề và chỉ báo hình ảnh:**
+  - Bóng Mực xuất hiện (kèm mũi tên chỉ hướng ở mép màn hình);
+  - gió sắp thổi;
+  - 10 giây cuối;
+  - đèn dưới 30 dầu;
+  - đèn tắt.
+
 ## Sáng tạo của tôi
 
 Tất cả chỉ nằm trong `src/web/` (phần hiển thị) và không chạm vào `src/sim/`, nên đầu ra headless không đổi. Bằng chứng: `npm test` và `npm run proof` chỉ chạy lõi mô phỏng và vẫn đạt toàn bộ (xem [results.md](docs/proof/phase-1/results.md)).
@@ -93,4 +136,4 @@ docs/proof/    bằng chứng từng phase
 AGENTS.md, CLAUDE.md, .claude/   harness AI: hướng dẫn, skill verify-game, hook Stop chạy test
 ```
 
-Ghi chép: [Phase 1](docs/notes/phase-1.md) · [Phase 2](docs/notes/phase-2.md) · [Phase 3](docs/notes/phase-3.md) · Bằng chứng: [Phase 1](docs/proof/phase-1/README.md) · [Phase 2](docs/proof/phase-2/README.md) · [Phase 3](docs/proof/phase-3/README.md) · Nguồn: [CREDITS.md](CREDITS.md) · Giấy phép: [LICENSE](LICENSE)
+Ghi chép: [Phase 1](docs/notes/phase-1.md) · [Phase 2](docs/notes/phase-2.md) · [Phase 3](docs/notes/phase-3.md) · [Phase 4](docs/notes/phase-4.md) · [Retro](docs/retro.md) · Bằng chứng: [Phase 1](docs/proof/phase-1/README.md) · [Phase 2](docs/proof/phase-2/README.md) · [Phase 3](docs/proof/phase-3/README.md) · [Phase 4](docs/proof/phase-4/README.md) · Nguồn: [CREDITS.md](CREDITS.md) · Giấy phép: [LICENSE](LICENSE)
