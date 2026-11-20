@@ -114,7 +114,9 @@ export function parseInputs(raw) {
 
 // ---------- simulation ----------
 export class Sim {
-  constructor({ seed = 0, night = 1, scenario = {} } = {}) {
+  // bench = Ticket-04 benchmark scene: no spawns, damage, pickup, fuel loss or end of night (not a contract option)
+  constructor({ seed = 0, night = 1, scenario = {}, bench = false } = {}) {
+    this.bench = bench;
     const N = NIGHTS[night];
     if (!N) throw new ValidationError(`night ${night} does not exist`);
     this.N = N;
@@ -274,9 +276,9 @@ export class Sim {
     for (const c of this.charms) if (!c.available && c.respawn > 0 && --c.respawn === 0) c.available = true;
     if (this.wind.active && --this.wind.ticks <= 0) this.wind.active = false;
     // Ticket-03: fuel decay (1/s) + drain (5/s per draining shade), then lanterns at fuel <= 0 go out
-    for (const L of this.lanterns) if (L.lit) L.fuel -= Math.round(T.fuel_decay_per_s);
+    if (!this.bench) for (const L of this.lanterns) if (L.lit) L.fuel -= Math.round(T.fuel_decay_per_s);
     for (const sh of [...this.shades].sort(byId)) {
-      if (sh.state !== "drain") continue;
+      if (sh.state !== "drain" || this.bench) continue;
       const L = this.lanterns.find((q) => q.id === sh.target);
       if (!L || !L.lit) continue;
       L.fuel -= Math.round(T.drain_per_s);
@@ -301,7 +303,7 @@ export class Sim {
     // 3. move Mây, then fall check
     if (p.dead === 0) this.movePlayer(e);
 
-    if (p.dead === 0) {
+    if (p.dead === 0 && !this.bench) {
       // 4. pick up motes & charms
       for (let i = 0; i < this.motes.length && p.carried < this.capacity; ) {
         const m = this.motes[i];
@@ -412,7 +414,7 @@ export class Sim {
     for (const dr of this.drifters) this.moveDrifter(dr);
 
     // 9. contact: drifters steal first, then shades hit (ascending id)
-    if (p.dead === 0) {
+    if (p.dead === 0 && !this.bench) {
       for (const dr of [...this.drifters].sort(byId)) {
         if (dr.state !== "chase" || dr.used || p.carried <= 0) continue;
         if (hd(dr.x, dr.z, p.x, p.z) <= W.drifter_steal_r) {
@@ -468,6 +470,7 @@ export class Sim {
     if (this.windEnabled && st % W.wind_every === 0) this.wind = { active: true, dir: Math.floor(this.rng() * 360), ticks: W.wind_ticks };
 
     // 11. win / lose
+    if (this.bench) return this.events;
     // Ticket-03: no early win. Flames first, then dawn: won if lit lanterns >= ceil(0.6 * total)
     if (p.flames <= 0) return this.finish("lost", "no_flames");
     if (this.timeStart - st / R <= 1e-9) {
@@ -601,7 +604,7 @@ export class Sim {
       else return; // drains standing still
     }
     if (p.dead > 0) { if (sh.state === "chase") sh.state = "wander"; }
-    else if (sh.state === "wander" && d <= W.shade_detect) sh.state = "chase";
+    else if (sh.state === "wander" && d <= W.shade_detect && !this.bench) sh.state = "chase"; // bench: shades keep wandering
     else if (sh.state === "chase" && d > W.shade_lose) sh.state = "wander";
     let tx, tz, speed;
     const nearestL = (pred) => this.lanterns.filter(pred).sort((a, b) => hd(sh.x, sh.z, a.x, a.z) - hd(sh.x, sh.z, b.x, b.z) || idNum(a.id) - idNum(b.id))[0];
